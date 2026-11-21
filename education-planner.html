@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Education Cost Planner</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#24344d;background:#f4f7fd}*{box-sizing:border-box}body{max-width:960px;margin:auto;padding:20px}header,.card{background:white;border:1px solid #dde6f4;border-radius:18px;padding:22px;margin:16px 0;box-shadow:0 3px 15px #2034560c}h1{margin:.3em 0;color:#244781}h2{margin-top:0}p,small{color:#56657b;line-height:1.5}a{color:#244e9a}label{display:block;font-weight:650;margin:12px 0 5px}input,select{width:100%;padding:11px;border:1px solid #bdcbe0;border-radius:9px;font:inherit;background:white}input[type=checkbox]{width:auto;accent-color:#315cb4}input[type=range]{padding:0;accent-color:#315cb4}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.controls{display:flex;gap:18px;flex-wrap:wrap;align-items:center}.controls label{margin:0}.big{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;color:#244781}.result{background:#edf3ff;border-radius:13px;padding:16px}.result strong{display:block;font-size:1.5rem;color:#244781}.muted{font-size:.9rem;color:#59677b}table{width:100%;border-collapse:collapse}td,th{text-align:right;padding:10px 6px;border-bottom:1px solid #e1e7f1}td:first-child,th:first-child{text-align:left}button{background:#315cb4;color:white;border:0;border-radius:10px;padding:12px 16px;font:inherit;cursor:pointer}button:hover{background:#244781}@media(max-width:650px){.grid{grid-template-columns:1fr}body{padding:10px}header,.card{padding:16px}table{font-size:.88rem}}</style></head>
+<body><header><a href="./index.html">← Kids Learning home</a><h1>🎓 Education Cost Planner</h1><p>Compare education pathways and future costs. No names, accounts, or personal data required.</p></header>
+<section class="card"><h2>Planning assumptions</h2><div class="grid">
+<div><label for="inflation">Annual education cost inflation (%)</label><input id="inflation" type="number" min="0" max="12" step=".5" value="4"></div>
+<div><label for="returns">Annual 529 investment return (%)</label><input id="returns" type="number" min="-5" max="15" step=".5" value="5"></div></div>
+<label><input type="checkbox" id="housing" checked> Include college and graduate-school room &amp; board</label>
+<p class="muted">All estimates are future dollars. Undergraduate costs include tuition, fees, books, transport and personal expenses. Room and board can be excluded with the checkbox. Graduate degrees are modeled at UW resident rates.</p></section>
+<div class="grid" id="students"></div>
+<section class="card"><h2>Combined estimate</h2><div class="big" id="combined"></div><p id="funding"></p><table><thead><tr><th>Student</th><th>School through grade 12</th><th>College</th><th>Further study</th><th>Total</th></tr></thead><tbody id="breakdown"></tbody></table><p class="muted">529 balances are not deducted from education costs. The estimated 529 value at college entry assumes a constant annual return and no withdrawals or new contributions. Actual age-based returns vary, especially near enrollment.</p><button id="reset" type="button">Reset estimates</button></section>
+<section class="card"><h2>How estimates work</h2><p>College entry is estimated as birth year + 18. A four-year bachelor's is followed, if selected, by a two-year master's, three-year law degree, or four-year medical degree. A master's is not required for law or medicine.</p><p>Baseline annual costs in 2026 dollars: UW resident undergraduate $37,213 with housing ($18,355 without); out-of-state public $70,000 with housing ($50,000 without); private university $100,000 with housing ($74,500 without). Additional annual graduate study costs in 2026 dollars are modeled at $47,367 master's, $77,172 law, or $100,000 medical with housing, with estimated non-housing portions of $32,000, $61,000, and $84,000 respectively. Actual schools and programs vary widely.</p><p>Private preschool–12 tuition is modeled as two preschool years at $30,000 per year, nine K–8 years at $38,000 per year, and four high school years at $50,000 per year, inflated from 2026. Private-school figures are tuition only and do not include preschool boarding. The model assumes preschool starts at age 3, kindergarten at age 5, and college at age 18. Public K–12 tuition is modeled as $0, excluding taxes and incidental costs.</p><p class="muted">Illustrative planning model, not a tuition quote, financial advice, or a prediction. No scholarships, financial aid, taxes, or special residency exceptions are assumed. Some projected expenses may not qualify for tax-free 529 withdrawals.</p></section>
+<script>
+const NOW=2026;
+const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+const configs=[{birth:2020,school:'public',college:'uw',degree:'bachelor',balance:100000},{birth:2024,school:'private',college:'uw',degree:'bachelor',balance:100000}];
+const choices=(pairs,selected)=>pairs.map(([v,t])=>'<option value="'+v+'"'+(v===selected?' selected':'')+'>'+t+'</option>').join('');
+document.getElementById('students').innerHTML=configs.map((c,i)=>'<section class="card"><h2>Student '+(i+1)+'</h2><label>Birth year</label><input data-i="'+i+'" data-field="birth" type="number" min="1990" max="2050" value="'+c.birth+'"><label>School through grade 12</label><select data-i="'+i+'" data-field="school">'+choices([['public','Public school'],['private','Private preschool–12th grade']],c.school)+'</select><label>Undergraduate university</label><select data-i="'+i+'" data-field="college">'+choices([['uw','UW in-state'],['out','Out-of-state public'],['private','Private university']],c.college)+'</select><label>Highest degree</label><select data-i="'+i+'" data-field="degree">'+choices([['bachelor',"Bachelor's (4 years)"],['masters',"Bachelor's + Master's (6 years)"],['law',"Bachelor's + Law (7 years)"],['medical',"Bachelor's + Medicine (8 years)"]],c.degree)+'</select><label>529 balance today ($)</label><input data-i="'+i+'" data-field="balance" type="number" min="0" step="1000" value="'+c.balance+'"><div class="result"><span>Projected total education cost</span><strong id="total'+i+'"></strong><span class="muted" id="entry'+i+'"></span></div></section>').join('');
+function estimate(c,inflation,returns,includeHousing){
+ const entry=Number(c.birth)+18;
+ const yearCost=(amount,year)=>amount*Math.pow(1+inflation,year-NOW);
+ const underBase=includeHousing?{uw:37213,out:70000,private:100000}:{uw:18355,out:50000,private:74500};
+ const gradBase=includeHousing?{masters:47367,law:77172,medical:100000}:{masters:32000,law:61000,medical:84000};
+ const years={bachelor:0,masters:2,law:3,medical:4}[c.degree];
+ const college=Array.from({length:4},(_,i)=>yearCost(underBase[c.college],entry+i)).reduce((a,b)=>a+b,0);
+ const graduate=Array.from({length:years},(_,i)=>yearCost(gradBase[c.degree],entry+4+i)).reduce((a,b)=>a+b,0);
+ let school=0;
+ if(c.school==='private'){
+   for(let age=3;age<=4;age++)school+=yearCost(30000,Number(c.birth)+age);
+   for(let age=5;age<=13;age++)school+=yearCost(38000,Number(c.birth)+age);
+   for(let age=14;age<=17;age++)school+=yearCost(50000,Number(c.birth)+age);
+ }
+ const yearsToCollege=Math.max(0,entry-NOW);
+ const future529=Number(c.balance)*Math.pow(1+returns,yearsToCollege);
+ return {entry,school,college,graduate,total:school+college+graduate,future529};
+}
+function render(){
+ const inflation=Math.max(0,Number(document.getElementById('inflation').value)||0)/100;
+ const returns=(Number(document.getElementById('returns').value)||0)/100;
+ const housing=document.getElementById('housing').checked;
+ const results=configs.map(c=>estimate(c,inflation,returns,housing));
+ results.forEach((r,i)=>{document.getElementById('total'+i).textContent=money(r.total);document.getElementById('entry'+i).textContent='College entry: '+r.entry+' · 529 at entry: '+money(r.future529)});
+ document.getElementById('combined').textContent=money(results.reduce((sum,r)=>sum+r.total,0));
+ document.getElementById('funding').textContent='Projected combined 529 balances at college entry: '+money(results.reduce((sum,r)=>sum+r.future529,0))+' (each projected to its own entry year).';
+ document.getElementById('breakdown').innerHTML=results.map((r,i)=>'<tr><td>Student '+(i+1)+'</td><td>'+money(r.school)+'</td><td>'+money(r.college)+'</td><td>'+money(r.graduate)+'</td><td><b>'+money(r.total)+'</b></td></tr>').join('');
+}
+document.querySelectorAll('[data-field]').forEach(el=>el.addEventListener('input',()=>{const c=configs[Number(el.dataset.i)];c[el.dataset.field]=['birth','balance'].includes(el.dataset.field)?Math.max(0,Number(el.value)||0):el.value;render()}));
+document.querySelectorAll('#inflation,#returns,#housing').forEach(el=>el.addEventListener('input',render));
+document.getElementById('reset').addEventListener('click',()=>location.reload());
+render();
+</script></body></html>
